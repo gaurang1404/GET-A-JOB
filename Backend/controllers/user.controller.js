@@ -40,7 +40,7 @@ export const register = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: `Welcome ${firstName}!`,
+            message: "User registered successfully",
             user,
             success: true
         })
@@ -104,7 +104,7 @@ export const logIn = async (req, res) => {
         }
         
         return res.status(200).cookie("token", token, {maxAge: 15*24*60*60*1000, httpOnly: true, sameSite: "strict"}).json({
-            message: `Welcome back ${user.firstName}!`,
+            message: "User logged in successfully",
             user,
             success: true
         })
@@ -120,7 +120,7 @@ export const logIn = async (req, res) => {
 export const logOut = async (req, res) =>{
     try{    
         return res.status(200).cookie("token", "", {maxAge: 0}).json({
-            message: "Logged out successfully",
+            message: "User logged out successfully",
             success: true
         })
     }catch(error){
@@ -132,7 +132,7 @@ export const logOut = async (req, res) =>{
     }
 }
 
-export const updateprofile = async (req, res) => {
+export const updateProfile = async (req, res) => {
     try{
         
         const {firstName, lastName, phone, bio, skills, company} = req.body;
@@ -146,11 +146,7 @@ export const updateprofile = async (req, res) => {
             })
         };
 
-      
-
         let user = await User.findOne({_id: userId})
-
-        console.log(user);
 
         if(!user){
             return res.status(500).json({
@@ -159,8 +155,6 @@ export const updateprofile = async (req, res) => {
             })
         }
 
-
-        
         user.firstName = firstName;
         user.lastName = lastName;
         user.phone = phone;
@@ -182,7 +176,7 @@ export const updateprofile = async (req, res) => {
         
 
         return res.status(200).json({
-            message: "Peofile updated successfully",
+            message: "User profile updated successfully",
             user,
             success: true
         })
