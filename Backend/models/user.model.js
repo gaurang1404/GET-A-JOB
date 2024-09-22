@@ -24,7 +24,7 @@ const userSchema = mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ["Seeker", "Recruiter"],
+        enum: ["Job Seeker", "Job Recruiter"],
         required: true
     },
     profile: {
@@ -50,4 +50,4 @@ const userSchema = mongoose.Schema({
     }
 }, {timestamps: true})
 
-export const users = mongoose.model("users", userSchema)
+export const User = mongoose.model("users", userSchema)
