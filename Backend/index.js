@@ -32,6 +32,21 @@ server.use("/api/v1/company", CompanyRouter);
 server.use("/api/v1/job", JobRouter);
 server.use("/api/v1/application", ApplicationRouter);
 
+server.use((req, res, next) => {
+    res.status(404).json({
+        message: "Route not found",
+        success: false,
+    });
+});
+
+server.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({
+        message: "Something went wrong",
+        success: false,
+    });
+});
+
 const PORT  = process.env.PORT;
 server.listen(PORT || 1000, () => {
     connectDb()
