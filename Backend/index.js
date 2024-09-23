@@ -1,10 +1,12 @@
-import express from "express"
-import cookieParser from "cookie-parser"
-import cors from "cors"
-import dotenv from 'dotenv'
-import connectDb from "./utils/db.js"
-import UserRouter from "./routes/user.routes.js"
-import CompanyRouter from "./routes/company.routes.js"
+import express from "express";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+import connectDb from "./utils/db.js";
+import UserRouter from "./routes/user.routes.js";
+import CompanyRouter from "./routes/company.routes.js";
+import JobRouter from "./routes/job.routes.js";
+import ApplicationRouter from "./routes/application.routes.js";
 
 dotenv.config({});
 
@@ -27,6 +29,8 @@ server.get("/", (req, res) => {
 
 server.use("/api/v1/user", UserRouter);
 server.use("/api/v1/company", CompanyRouter);
+server.use("/api/v1/job", JobRouter);
+server.use("/api/v1/application", ApplicationRouter);
 
 const PORT  = process.env.PORT;
 server.listen(PORT || 1000, () => {
