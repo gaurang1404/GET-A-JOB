@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import { User } from "../models/user.model.js";
 
-export const register = async (req, res) => {
+export const signUp = async (req, res) => {
     try{
         const {firstName, lastName, email, password, phone, role} = req.body;
         if(!firstName || !lastName || !email || !password || !phone || !role){
@@ -40,7 +40,7 @@ export const register = async (req, res) => {
         }
 
         return res.status(200).json({
-            message: "User registered successfully",
+            message: "Signed up successfully",
             user,
             success: true
         })
