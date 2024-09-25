@@ -1,7 +1,6 @@
 import React from 'react'
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from './ui/carousel'
-import { Button } from './ui/button'
-import { Card, CardContent } from './ui/card'
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel'
+import { Card } from '@/components/ui/card'
 
 const categories = [
     "src/assets/backend.png",
@@ -19,7 +18,7 @@ export const CategoryCarousel = () => {
                 <CarouselContent className="-ml-1">
                     {
                         categories.map((cat, i) => (
-                            <CarouselItem className="md:basis-1/2 lg:basis-1/3">
+                            <CarouselItem key={i} className="md:basis-1/2 lg:basis-1/3">
                                 <Card className="h-15">
                                     <img
                                         className='w-full h-full zoom-in-50 rounded-sm'                                    

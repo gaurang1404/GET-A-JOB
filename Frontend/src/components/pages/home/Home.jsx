@@ -1,9 +1,9 @@
 import React from 'react'
-import { Navbar } from './shared/Navbar'
+import { Navbar } from '@/components/shared/Navbar'
 import { Hero } from './Hero'
 import { CategoryCarousel } from './CategoryCarousel'
 import { LatestJobs } from './LatestJobs'
-import Footer from './Footer'
+import Footer from '@/components/shared/Footer'
 
 export const Home = () => {
   return (

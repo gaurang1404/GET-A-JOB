@@ -8,7 +8,7 @@ import axios from "axios";
 import { USER_API_ENDPOINT } from "@/utils/const";
 import { toast } from "sonner";
 import { useDispatch, useSelector } from "react-redux";
-import { setLoading } from "@/redux/authSlice";
+import { setLoading, setUser } from "@/redux/authSlice";
 import { Loader2 } from "lucide-react";
 
 export const Login = () => {
@@ -37,9 +37,11 @@ export const Login = () => {
                 withCredentials: true
             });
 
+            
             if (res.data.success) {
-                navigate("/");
+                dispatch(setUser(res.data.user));
                 toast.success(`Logged in successfully,\nWelcome back, ${res.data.user.firstName}`);
+                navigate("/");
             }
 
         } catch (error) {
@@ -56,7 +58,7 @@ export const Login = () => {
             <div className="flex justify-center items-center mx-auto max-w-7xl">
                 <form
                     onSubmit={submitHandler}
-                    className="w-1/2 border border-gray-200 rounded-md my-10 p-6"
+                    className="w-1/2 border border-gray-200 rounded-md my-10 p-6 shadow-lg"
                 >
                     <h1 className="font-bold text-3xl mb-5 text-[#2c786c]">Log in</h1>
                     <div>

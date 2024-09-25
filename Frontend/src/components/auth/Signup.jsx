@@ -75,7 +75,7 @@ export const Signup = () => {
             <div className="flex justify-center items-center mx-auto max-w-7xl">
                 <form
                     onSubmit={submitHandler}
-                    className="w-1/2 border border-gray-200 rounded-md my-10 p-6"
+                    className="w-1/2 border border-gray-200 rounded-md my-10 p-6 shadow-lg"
                 >
                     <h1 className="font-bold text-3xl mb-5 text-[#2c786c]">Sign up</h1>
                     <div>
@@ -181,7 +181,7 @@ export const Signup = () => {
                     {
                         loading ? 
                         <Button className="bg-[#d8a005] w-full my-4 hover:bg-[#d8a005] cursor-default"> <Loader2 className="animate-spin mr-4"/> Please wait </Button> :
-                        <Button type="submit" className="bg-[#f8b400] w-full my-4 hover:bg-[#d8a005]">LOG IN</Button>
+                        <Button type="submit" className="bg-[#f8b400] w-full my-4 hover:bg-[#d8a005]">SIGN UP</Button>
                     }
                     <div className="flex justify-end">
                         <span className="text-sm mr-2">Already have an account?</span>
