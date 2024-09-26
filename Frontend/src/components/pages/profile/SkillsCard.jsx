@@ -7,57 +7,109 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-
-const initialSkills = ["React", "Node.js", "TypeScript", "Python", "AWS", "Docker", "GraphQL", "MongoDB"];
+import { useDispatch, useSelector } from 'react-redux';
+import { setLoading, setUser } from '@/redux/authSlice';
+import axios from 'axios';
+import { USER_API_ENDPOINT } from '@/utils/const';
 
 export const SkillsCard = () => {
-  const [skills, setSkills] = useState(initialSkills);
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((store) => store.auth);
+
+  const [skills, setSkills] = useState(user?.profile?.skills || []);
   const [newSkill, setNewSkill] = useState('');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
-  const [skillsToRemove, setSkillsToRemove] = useState(new Set());
+  const [skillsToRemove, setSkillsToRemove] = useState([]);
 
-  const handleAddSkill = (e) => {
-    e.preventDefault();
-    if (!newSkill.trim()) {
-      toast.error('Please enter a skill.');
-      return;
+  const handleAddSkill = async () => {
+    try {
+      dispatch(setLoading(true));
+
+      if (!newSkill.trim()) {
+        toast.error('Please enter a skill.');
+        return;
+      }
+
+      // Check if the skill already exists
+      if (skills.includes(newSkill)) {
+        toast.error('This skill has already been added.');
+        return;
+      }
+
+      const updatedSkills = [...skills, newSkill];
+      setSkills(updatedSkills);
+      
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { skills: updatedSkills }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Skills updated successfully!');
+      }
+
+      setNewSkill('');
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while updating.');
+    } finally {
+      setIsAddOpen(false);
+      dispatch(setLoading(false));
     }
+  };
 
-    // Check if the skill already exists
-    if (skills.includes(newSkill)) {
-      toast.error('This skill has already been added.');
-      return;
+  const handleRemoveSkills = async () => {
+    try {
+      dispatch(setLoading(true));
+      
+      // Use array logic to filter out the selected skills
+      const updatedSkills = skills.filter(skill => !skillsToRemove.includes(skill));
+  
+      // Make the API call with the updated skills array
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { skills: updatedSkills }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+  
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Skills removed successfully!');
+      }
+  
+      // Update the skills state and clear the skillsToRemove array after the operation
+      setSkills(updatedSkills);
+      setSkillsToRemove([]);  // Clear selected skills for removal
+  
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while removing the skills.');
+    } finally {
+      setIsRemoveOpen(false);
+      dispatch(setLoading(false));
     }
-
-    setSkills((prev) => [...prev, newSkill]);
-    setNewSkill('');
-    setIsAddOpen(false);
   };
 
   const handleCheckboxChange = (skill) => {
     setSkillsToRemove((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(skill)) {
-        updated.delete(skill);
+      if (prev.includes(skill)) {
+        return prev.filter((item) => item !== skill);  // Remove the skill
       } else {
-        updated.add(skill);
+        return [...prev, skill];  // Add the skill
       }
-      return updated;
     });
-  };
-
-  const handleRemoveSkills = () => {
-    setSkills((prev) => prev.filter(skill => !skillsToRemove.has(skill)));
-    setSkillsToRemove(new Set());
-    setIsRemoveOpen(false);
   };
 
   return (
     <Card className="rounded-md shadow-md mb-6">
       <CardHeader className="flex flex-row items-center gap-4 justify-between">
         <CardTitle>Skills</CardTitle>
-        <div className="flex justify-start h-full gap-2 ">
+        <div className="flex justify-start h-full gap-2">
           {/* Add Skill Dialog */}
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
@@ -80,7 +132,13 @@ export const SkillsCard = () => {
                 />
               </div>
               <DialogFooter>
-                <Button type="button" onClick={handleAddSkill}>Save changes</Button>
+                {
+                  loading ? 
+                  <Button className="cursor-default">
+                    Please wait...
+                  </Button> :
+                  <Button type="button" onClick={handleAddSkill}>Save changes</Button>
+                }
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -102,7 +160,7 @@ export const SkillsCard = () => {
                   <div key={index} className="flex gap-2">
                     <Checkbox
                       id={`skill-${index}`}                      
-                      onChange={() => handleCheckboxChange(skill)}
+                      onClick={() => handleCheckboxChange(skill)}
                     />
                     <label
                       htmlFor={`skill-${index}`}
@@ -114,7 +172,13 @@ export const SkillsCard = () => {
                 ))}
               </div>
               <DialogFooter>
-                <Button type="button" variant="destructive" onClick={handleRemoveSkills}>Remove</Button>
+                {
+                  loading ?
+                  <Button className="cursor-default">
+                    Please wait...
+                  </Button> :
+                  <Button type="button" variant="destructive" onClick={handleRemoveSkills}>Remove</Button>
+                }
               </DialogFooter>
             </DialogContent>
           </Dialog>

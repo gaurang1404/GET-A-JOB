@@ -27,6 +27,10 @@ const userSchema = mongoose.Schema({
         enum: ["Job Seeker", "Job Recruiter"],
         required: true
     },
+    location: {
+        type: String,
+        required: true
+    },
     profile: {
         bio: {
             type: String
@@ -40,6 +44,71 @@ const userSchema = mongoose.Schema({
         resumeTitle: {
             type: String
         },
+        workExperience: [{
+            title: {
+                type: String,
+                required: true,
+            },
+            company: {
+                type: String,
+                required: true,
+            },
+            startDate: {
+                type: String,
+                required: true
+            },
+            endDate: {
+                type: String,
+                required: true
+            },
+            responsibilities: {
+                type: [String],
+                required: true,
+            }
+        }],
+
+        educationExperience: [{
+            degree: {
+                type: String,
+                required: true,
+            },
+            institution: {
+                type: String,
+                required: true,
+            },
+            startYear: {
+                type: String,
+                required: true
+            },
+            endYear: {
+                type: String,
+                required: true
+            },
+        }],
+
+        languages: [{
+            name: {
+                type: String,
+                required: true,
+            },
+            proficiency: {
+                type: String,
+                enum: ['Native', 'Fluent', 'Intermediate', 'Basic'],
+                required: true,
+            }
+        }],
+
+        certifications: [{
+            name: {
+                type: String,
+                required: true,
+            },
+            link: {
+                type: String,
+                default: ""
+            }
+        }],
+
         company: {
             type: mongoose.Schema.Types.ObjectId, ref: 'companies'
         },

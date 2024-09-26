@@ -1,31 +1,25 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { PlusIcon, Minus } from 'lucide-react';
-import { Toast } from '../../ui/toast';
+import { Loader2, PlusIcon, X } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { setLoading, setUser } from '@/redux/authSlice';
 import { toast } from 'sonner';
-
-const educationData = [
-    {
-        degree: "Master of Science in Computer Science",
-        institution: "Stanford University",
-        duration: "2013 - 2015"
-    },
-    {
-        degree: "Bachelor of Science in Computer Engineering",
-        institution: "University of California, Berkeley",
-        duration: "2009 - 2013"
-    }
-];
+import axios from 'axios';
+import { USER_API_ENDPOINT } from '@/utils/const';
 
 export const EducationExperienceCard = () => {
+    const { loading, user } = useSelector(store => store.auth);
+    const navigate = useNavigate();
+    const dispatch = useDispatch();
+
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isRemoveOpen, setIsRemoveOpen] = useState(false);
-    const [educationList, setEducationList] = useState(educationData);
+    const [educationList, setEducationList] = useState(user?.profile?.educationExperience || []);
     const [newEducation, setNewEducation] = useState({
         degree: '',
         institution: '',
@@ -33,50 +27,98 @@ export const EducationExperienceCard = () => {
         endYear: ''
     });
 
+    const [educationToRemove, setEducationToRemove] = useState(null);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewEducation(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleAddEducation = (e) => {
-        e.preventDefault();
-        const startYear = parseInt(newEducation.startYear);
-        const endYear = parseInt(newEducation.endYear);
+    const handleAddEducation = async () => {
+        try {
+            dispatch(setLoading(true));
 
-        // Basic validation
-        if (isNaN(startYear) || isNaN(endYear) || startYear > endYear) {
-            toast({
-                title: 'Invalid Year Input',
-                description: 'Please ensure the years are valid and the end year is greater than or equal to the start year.',
-                variant: 'destructive'
+            if (!newEducation.degree || !newEducation.institution) {
+                toast.error('Degree and institution cannot be empty.');
+                return;
+            }
+
+            const updatedEducationList = [...educationList, {
+                degree: newEducation.degree,
+                institution: newEducation.institution,
+                startYear: newEducation.startYear,
+                endYear: newEducation.endYear,
+            }];
+
+            setEducationList(updatedEducationList);
+
+            const data = { educationExperience: updatedEducationList };
+
+            const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, data, {
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                withCredentials: true
             });
-            return;
-        }
 
-        setEducationList(prev => [...prev, {
-            degree: newEducation.degree,
-            institution: newEducation.institution,
-            duration: `${newEducation.startYear} - ${newEducation.endYear}`
-        }]);
-        setNewEducation({ degree: '', institution: '', startYear: '', endYear: '' });
-        setIsAddOpen(false);
+            if (res.data.success) {
+                dispatch(setUser(res.data.user));
+                toast.success('Education details updated successfully!');
+                navigate("/profile");
+            }
+
+            setNewEducation({ degree: '', institution: '', startYear: '', endYear: '' });
+        } catch (error) {
+            console.log(error);
+            toast.error(error.response?.data?.message || 'An error occurred while updating.');
+        } finally {
+            setIsAddOpen(false);
+            dispatch(setLoading(false));
+        }
     };
 
-    const handleRemoveEducation = (degreeToRemove) => {
-        setEducationList(prev => prev.filter(edu => edu.degree !== degreeToRemove));
-        setIsRemoveOpen(false);
+
+    const handleRemoveEducation = (education) => {
+        setEducationToRemove(education);
+        setIsRemoveOpen(true);
+    };
+
+    const confirmRemoveEducation = async () => {
+        try {
+            const updatedEducationList = educationList.filter(edu => edu.degree !== educationToRemove.degree);
+            setEducationList(updatedEducationList);
+
+            const data = { educationExperience: updatedEducationList };
+
+            const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, data, {
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                withCredentials: true
+            });
+
+            if (res.data.success) {
+                toast.success('Education details removed successfully!');
+                dispatch(setUser(res.data.user));
+            }
+
+            setIsRemoveOpen(false);
+            setEducationToRemove(null);
+        } catch (error) {
+            console.log(error);
+            toast.error(error.response?.data?.message || 'An error occurred while removing the education detail.');
+        }
     };
 
     return (
-        <Card className="rounded-md shadow-md">
+        <Card className="rounded-md shadow-md mb-6">
             <CardHeader className="flex flex-row items-center gap-4 justify-between">
                 <CardTitle>Education</CardTitle>
-                <div className="flex justify-start h-full gap-2">
-
+                <div className="flex gap-2">
                     {/* Add Education Dialog */}
                     <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline">
+                            <Button variant="outline" onClick={() => setIsAddOpen(true)}>
                                 <PlusIcon className="mr-2" /> Add Education
                             </Button>
                         </DialogTrigger>
@@ -84,62 +126,75 @@ export const EducationExperienceCard = () => {
                             <DialogHeader>
                                 <DialogTitle>Add Education</DialogTitle>
                             </DialogHeader>
-                            <form onSubmit={handleAddEducation} className="space-y-4">
+                            {/* Replaced form tag with div */}
+                            <div className="space-y-4">
                                 <InputField
                                     id="degree"
                                     label="Degree"
+                                    name="degree"
                                     value={newEducation.degree}
                                     onChange={handleInputChange}
                                     required
-                                    name="degree"
                                 />
                                 <InputField
                                     id="institution"
                                     label="Institution"
+                                    name="institution"
                                     value={newEducation.institution}
                                     onChange={handleInputChange}
                                     required
-                                    name="institution"
                                 />
-                                <YearSelection
-                                    startYear={newEducation.startYear}
-                                    endYear={newEducation.endYear}
-                                    onStartYearChange={handleInputChange}
-                                    onEndYearChange={handleInputChange}
+                                <InputField
+                                    id="startYear"
+                                    label="Start Year"
+                                    name="startYear"
+                                    value={newEducation.startYear}
+                                    onChange={handleInputChange}
+                                    type="number"
+                                    required
                                 />
-                                <Button type="submit" className="w-full">Add Education</Button>
-                            </form>
+                                <InputField
+                                    id="endYear"
+                                    label="End Year"
+                                    name="endYear"
+                                    value={newEducation.endYear}
+                                    onChange={handleInputChange}
+                                    type="number"
+                                />
+                                {/* Button triggers handleAddEducation without refreshing the page */}
+                                {
+                                    loading ?
+                                        <Button className="w-full cursor-default">
+                                            <Loader2 className="animate-spin mr-4" /> Please wait
+                                        </Button> :
+                                        <Button type="button" className="w-full" onClick={handleAddEducation}>
+                                            Save Education
+                                        </Button>
+                                }
+                            </div>
                         </DialogContent>
                     </Dialog>
 
-                    {/* Remove Education Dialog */}
+
+                    {/* Confirmation Dialog for Removal */}
                     <Dialog open={isRemoveOpen} onOpenChange={setIsRemoveOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline">
-                                <PlusIcon className="mr-2" /> Remove Education
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-[300px]">
                             <DialogHeader>
-                                <DialogTitle>Remove Education</DialogTitle>
-                                <DialogDescription>
-                                    Select the education detail you want to remove.
-                                </DialogDescription>
+                                <DialogTitle>Confirm Removal</DialogTitle>
                             </DialogHeader>
-                            <div className="space-y-4">
-                                {educationList.map((edu, index) => (
-                                    <div key={index} className="flex gap-2">
-                                        <Checkbox
-                                            id={`education-${index}`}
-                                            onChange={() => handleRemoveEducation(edu.degree)}
-                                        />
-                                        <Label htmlFor={`education-${index}`}>{edu.degree} - {edu.institution}</Label>
-                                    </div>
-                                ))}
+                            <p>Are you sure you want to remove this education detail?</p>
+                            <div className="flex justify-end mt-4">
+                                <Button variant="outline" onClick={() => setIsRemoveOpen(false)} className="mr-2">
+                                    Cancel
+                                </Button>
+                                {
+                                    loading ?
+                                        <Button className="cursor-default"> <Loader2 className="animate-spin mr-4" /> Please wait </Button> :
+                                        <Button variant="destructive" onClick={confirmRemoveEducation}>
+                                            Remove
+                                        </Button>
+                                }
                             </div>
-                            <DialogFooter>
-                                <Button type="button" variant="destructive" onClick={() => setIsRemoveOpen(false)}>Remove</Button>
-                            </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </div>
@@ -148,13 +203,8 @@ export const EducationExperienceCard = () => {
             {/* Display Education List */}
             <CardContent>
                 <div className="space-y-4">
-                    {educationList.map((edu, index) => (
-                        <div key={index}>
-                            <h3 className="font-semibold">{edu.degree}</h3>
-                            <p className="text-sm text-muted-foreground">
-                                {edu.institution} | {edu.duration}
-                            </p>
-                        </div>
+                    {educationList.map((education, index) => (
+                        <EducationItem key={index} education={education} onRemove={() => handleRemoveEducation(education)} />
                     ))}
                 </div>
             </CardContent>
@@ -162,7 +212,7 @@ export const EducationExperienceCard = () => {
     );
 };
 
-// Helper Component for Input Field
+// Helper Components
 const InputField = ({ id, label, ...props }) => (
     <div className="space-y-2">
         <Label htmlFor={id}>{label}</Label>
@@ -170,45 +220,14 @@ const InputField = ({ id, label, ...props }) => (
     </div>
 );
 
-// Year Selection Component
-const YearSelection = ({ startYear, endYear, onStartYearChange, onEndYearChange }) => {
-    const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
-
-    return (
-        <div className="flex space-x-4">
-            <div className="space-y-2 w-1/2">
-                <Label htmlFor="startYear">Start Year</Label>
-                <select
-                    id="startYear"
-                    name="startYear"
-                    value={startYear}
-                    onChange={onStartYearChange}
-                    className="border rounded-md p-2 w-full"
-                    required
-                >
-                    <option value="">Select Start Year</option>
-                    {years.map(year => (
-                        <option key={year} value={year}>{year}</option>
-                    ))}
-                </select>
-            </div>
-            <div className="space-y-2 w-1/2">
-                <Label htmlFor="endYear">End Year</Label>
-                <select
-                    id="endYear"
-                    name="endYear"
-                    value={endYear}
-                    onChange={onEndYearChange}
-                    className="border rounded-md p-2 w-full"
-                    required
-                >
-                    <option value="">Select End Year</option>
-                    {years.map(year => (
-                        <option key={year} value={year}>{year}</option>
-                    ))}
-                </select>
-            </div>
+const EducationItem = ({ education, onRemove }) => (
+    <div className="flex justify-between items-center">
+        <div>
+            <h3 className="font-semibold">{education.degree}</h3>
+            <p className="text-sm text-muted-foreground">{education.institution} | {education.startYear} - {education.endYear}</p>
         </div>
-    );
-};
+        <Button variant="ghost" size="icon" onClick={onRemove}>
+            <X className="h-4 w-4" />
+        </Button>
+    </div>
+);

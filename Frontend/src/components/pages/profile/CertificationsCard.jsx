@@ -7,15 +7,15 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
-
-const initialCertifications = [
-  { name: 'AWS Certified Solutions Architect', link: '' },
-  { name: 'Google Cloud Professional Developer', link: '' },
-  { name: 'MongoDB Certified Developer', link: '' },
-];
+import { useDispatch, useSelector } from 'react-redux';
+import { setLoading, setUser } from '@/redux/authSlice';
+import axios from 'axios';
+import { USER_API_ENDPOINT } from '@/utils/const';
 
 export const CertificationsCard = () => {
-  const [certificationsList, setCertificationsList] = useState(initialCertifications);
+  const dispatch = useDispatch();
+  const { user } = useSelector((store) => store.auth);
+  const [certificationsList, setCertificationsList] = useState(user?.profile?.certifications || []);
   const [newCertification, setNewCertification] = useState({ name: '', link: '' });
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
@@ -26,7 +26,7 @@ export const CertificationsCard = () => {
     setNewCertification(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddCertification = (e) => {
+  const handleAddCertification = async (e) => {
     e.preventDefault();
     if (!newCertification.name || !newCertification.link) {
       toast.error('Please fill in both fields.');
@@ -39,9 +39,33 @@ export const CertificationsCard = () => {
       return;
     }
 
-    setCertificationsList(prev => [...prev, { ...newCertification }]); // Spread newCertification object
+    // Update the certifications state
+    const updatedCertifications = [...certificationsList, { ...newCertification }];
+
+    try {
+      dispatch(setLoading(true));
+
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { certifications: updatedCertifications }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Certification added successfully!');
+        setCertificationsList(updatedCertifications); // Update local state
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while adding the certification.');
+    } finally {
+      setIsAddOpen(false);
+      dispatch(setLoading(false));
+    }
+
     setNewCertification({ name: '', link: '' });
-    setIsAddOpen(false);
   };
 
   const handleCheckboxChange = (name) => {
@@ -56,10 +80,32 @@ export const CertificationsCard = () => {
     });
   };
 
-  const handleRemoveCertification = () => {
-    setCertificationsList(prev => prev.filter(cert => !certificationsToRemove.has(cert.name)));
-    setCertificationsToRemove(new Set()); // Clear selected certifications
-    setIsRemoveOpen(false);
+  const handleRemoveCertification = async () => {
+    const updatedCertifications = certificationsList.filter(cert => !certificationsToRemove.has(cert.name));
+
+    try {
+      dispatch(setLoading(true));
+
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { certifications: updatedCertifications }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Certification removed successfully!');
+        setCertificationsList(updatedCertifications); // Update local state
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while removing the certification.');
+    } finally {
+      setCertificationsToRemove(new Set()); // Clear selected certifications
+      setIsRemoveOpen(false);
+      dispatch(setLoading(false));
+    }
   };
 
   return (
@@ -117,8 +163,8 @@ export const CertificationsCard = () => {
                 {certificationsList.map((cert, index) => (
                   <div key={index} className="flex gap-2">
                     <Checkbox
-                      id={`certification-${index}`}                    
-                      onChange={() => handleCheckboxChange(cert.name)} // Call handler on change
+                      id={`certification-${index}`}                      
+                      onClick={() => handleCheckboxChange(cert.name)} // Pass certification name instead of object
                     />
                     <Label htmlFor={`certification-${index}`}>{cert.name}</Label>
                   </div>

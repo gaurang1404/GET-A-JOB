@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import { useDispatch, useSelector } from 'react-redux';
+import { setLoading, setUser } from '@/redux/authSlice';
+import axios from 'axios';
+import { USER_API_ENDPOINT } from '@/utils/const';
 
 // Enum for fluency levels
 const FluencyLevels = {
@@ -27,14 +31,10 @@ const availableLanguages = [
   'Arabic',
 ];
 
-const initialLanguages = [
-  { name: 'English', proficiency: FluencyLevels.NATIVE },
-  { name: 'Spanish', proficiency: FluencyLevels.FLUENT },
-  { name: 'French', proficiency: FluencyLevels.INTERMEDIATE },
-];
-
 export const LanguagesCard = () => {
-  const [languagesList, setLanguagesList] = useState(initialLanguages);
+  const dispatch = useDispatch();
+  const { user, loading } = useSelector((store) => store.auth);
+  const [languagesList, setLanguagesList] = useState(user?.profile?.languages || []);
   const [newLanguage, setNewLanguage] = useState({ name: '', proficiency: '' });
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
@@ -45,7 +45,7 @@ export const LanguagesCard = () => {
     setNewLanguage(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleAddLanguage = (e) => {
+  const handleAddLanguage = async (e) => {
     e.preventDefault();
     if (!newLanguage.name || !newLanguage.proficiency) {
       toast.error('Please fill in both fields.');
@@ -58,9 +58,33 @@ export const LanguagesCard = () => {
       return;
     }
 
-    setLanguagesList(prev => [...prev, { ...newLanguage }]); // Spread newLanguage object
+    // Update the languages state
+    const updatedLanguages = [...languagesList, { ...newLanguage }];
+
+    try {
+      dispatch(setLoading(true));
+
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { languages: updatedLanguages }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Language added successfully!');
+        setLanguagesList(updatedLanguages); // Update local state
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while adding the language.');
+    } finally {
+      setIsAddOpen(false);
+      dispatch(setLoading(false));
+    }
+
     setNewLanguage({ name: '', proficiency: '' });
-    setIsAddOpen(false);
   };
 
   const handleCheckboxChange = (name) => {
@@ -75,10 +99,35 @@ export const LanguagesCard = () => {
     });
   };
 
-  const handleRemoveLanguage = () => {
-    setLanguagesList(prev => prev.filter(lang => !languagesToRemove.has(lang.name)));
-    setLanguagesToRemove(new Set()); // Clear selected languages
-    setIsRemoveOpen(false);
+  const handleRemoveLanguage = async () => {
+    if(!languagesToRemove || languagesToRemove.size == 0){
+      return;
+    }
+    const updatedLanguages = languagesList.filter(lang => !languagesToRemove.has(lang.name));
+    
+    try {
+      dispatch(setLoading(true));
+
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, { languages: updatedLanguages }, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.success) {
+        dispatch(setUser(res.data.user));
+        toast.success('Language removed successfully!');
+        setLanguagesList(updatedLanguages); // Update local state
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response?.data?.message || 'An error occurred while removing the language.');
+    } finally {
+      setLanguagesToRemove(new Set()); // Clear selected languages
+      setIsRemoveOpen(false);
+      dispatch(setLoading(false));
+    }
   };
 
   return (
@@ -144,15 +193,15 @@ export const LanguagesCard = () => {
                 </DialogDescription>
               </DialogHeader>
               
-                {languagesList.map((lang, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Checkbox
-                      id={`language-${index}`}                  
-                      onChange={() => handleCheckboxChange(lang.name)} // Call handler on change
-                    />
-                    <Label htmlFor={`language-${index}`}>{lang.name} - {lang.proficiency}</Label>
-                  </div>
-                ))}
+              {languagesList.map((lang, index) => (
+                <div key={index} className="flex gap-2">
+                  <Checkbox
+                    id={`language-${index}`}                  
+                    onClick={() => handleCheckboxChange(lang.name)} // Call handler on click
+                  />
+                  <Label htmlFor={`language-${index}`}>{lang.name} - {lang.proficiency}</Label>
+                </div>
+              ))}
               
               <DialogFooter>
                 <Button type="button" onClick={() => setIsRemoveOpen(false)}>Cancel</Button>

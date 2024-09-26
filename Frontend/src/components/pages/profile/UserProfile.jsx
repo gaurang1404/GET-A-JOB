@@ -34,22 +34,17 @@ export const UserProfile = () => {
         <div className=" grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="g md:col-span-2">
             <ProfileCard/>
-
             <AboutMeCard/>
-
             <SkillsCard/>
-
             <WorkExperienceCard/>
             <EducationExperienceCard/>
           </div>
-
           <div>
             <LanguagesCard/>
-
             <CertificationsCard/>
             <div className="flex flex-col gap-2">        
-              <Button className="bg-[#004445] hover:border hover:border-black text=[white] w-full hover:bg-[white] hover:text-[#004445]">Upload New Resume</Button>
-              <Button className="bg-[#004445] hover:border hover:border-black text=[white] w-full hover:bg-[white] hover:text-[#004445]">Download Resume</Button>
+              <Button className="bg-[white] border border-black text-[black] w-full hover:bg-[#faf5e4] hover:text-[#004445]">Upload New Resume</Button>
+              <Button className="bg-[white] border border-black text-[black] w-full hover:bg-[#faf5e4] hover:text-[#004445]">Download Resume</Button>
             </div>
           </div>
         </div>

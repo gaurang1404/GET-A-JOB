@@ -1,27 +1,58 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Edit } from 'lucide-react';
+import { Edit, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { setLoading, setUser } from '@/redux/authSlice';
+import axios from 'axios';
+import { USER_API_ENDPOINT } from '@/utils/const';
 
 export const AboutMeCard = () => {
-  const [bio, setBio] = useState(
-    "Passionate software engineer with 8+ years of experience in developing scalable web applications. Skilled in React, Node.js, and cloud technologies. Always eager to learn and tackle new challenges."
-  );
+  const { loading, user } = useSelector(store => store.auth);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const [bio, setBio] = useState(user?.profile?.bio);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [newBio, setNewBio] = useState(bio);
 
-  const handleSaveChanges = () => {
-    if (!newBio.trim()) {
-      toast.error('Bio cannot be empty.');
-      return;
-    }
+  const handleSaveChanges = async () => {
+    try{
+      dispatch(setLoading(true))
+      if (!newBio) {
+        toast.error('Bio cannot be empty.');
+        return;
+      }
+      const bioObj = {
+        bio: newBio
+      }
 
-    setBio(newBio);
-    setIsEditOpen(false);
-    toast.success('Bio updated successfully!');
+      const res = await axios.put(`${USER_API_ENDPOINT}/profile/update`, bioObj, {
+        headers: {
+          "Content-Type": "application/json"
+        },
+        withCredentials: true
+      });
+
+      if (res.data.success) {
+        setBio(newBio.trim());
+        navigate("/profile");
+        toast.success('Bio updated successfully!');
+        dispatch(setUser(res.data.user));
+        setIsEditOpen(false);
+      }
+      
+    }catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message);
+    } finally {
+      dispatch(setLoading(false));
+    }
+    
   };
 
   return (
@@ -36,7 +67,11 @@ export const AboutMeCard = () => {
           </DialogTrigger>
         </CardHeader>
         <CardContent>
-          <p>{bio}</p>
+          {
+            !bio ? 
+              <p>Add about me</p> :
+              <p>{bio}</p>
+          }
         </CardContent>
 
         <DialogContent className="sm:max-w-[425px]">
@@ -58,7 +93,11 @@ export const AboutMeCard = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" onClick={handleSaveChanges}>Save changes</Button>
+            {
+              loading ? 
+              <Button className="cursor-default"> <Loader2 className="animate-spin mr-4" /> Please wait</Button> :
+              <Button type="button" onClick={handleSaveChanges}>Save changes</Button>
+            }
           </DialogFooter>
         </DialogContent>
       </Card>

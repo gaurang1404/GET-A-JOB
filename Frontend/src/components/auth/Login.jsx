@@ -1,17 +1,24 @@
-import React, { useState } from "react";
-import { Navbar } from "../shared/Navbar";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios"; 
-import { USER_API_ENDPOINT } from "@/utils/const";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Navbar } from "../shared/Navbar";
 import { useDispatch, useSelector } from "react-redux";
-import { setLoading, setUser } from "@/redux/authSlice";
 import { Loader2 } from "lucide-react";
+import { setLoading, setUser } from "@/redux/authSlice";
+import axios from "axios";
+import { toast } from "sonner";
+import { USER_API_ENDPOINT } from "@/utils/const";
 
-export const Login = () => {
+export const LogIn = () => {
     const [input, setInput] = useState({
         email: "",
         password: "",
@@ -20,7 +27,7 @@ export const Login = () => {
 
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const {loading} = useSelector(store => store.auth);
+    const { loading } = useSelector(store => store.auth);
 
     const changeFormHandler = (e) => {
         setInput({ ...input, [e.target.name]: e.target.value });
@@ -28,8 +35,8 @@ export const Login = () => {
 
     const submitHandler = async (e) => {
         try {
-            dispatch(setLoading(true));
             e.preventDefault();
+            dispatch(setLoading(true));
             const res = await axios.post(`${USER_API_ENDPOINT}/login`, input, {
                 headers: {
                     "Content-Type": "application/json"
@@ -39,9 +46,9 @@ export const Login = () => {
 
             
             if (res.data.success) {
-                dispatch(setUser(res.data.user));
-                toast.success(`Logged in successfully,\nWelcome back, ${res.data.user.firstName}`);
                 navigate("/");
+                toast.success(res.data.message);
+                dispatch(setUser(res.data.user));
             }
 
         } catch (error) {
@@ -53,85 +60,87 @@ export const Login = () => {
     };
 
     return (
-        <>
+        <div>
             <Navbar />
-            <div className="flex justify-center items-center mx-auto max-w-7xl">
-                <form
-                    onSubmit={submitHandler}
-                    className="w-1/2 border border-gray-200 rounded-md my-10 p-6 shadow-lg"
-                >
-                    <h1 className="font-bold text-3xl mb-5 text-[#2c786c]">Log in</h1>
-                    <div>
-                        <Label className="text-l ml-1 font-bold">
-                            Email
+            <Card className="max-w-2xl mx-auto mb-10">
+                <CardHeader>
+                    <CardTitle className="text-xl">Log In</CardTitle>
+                    <CardDescription>
+                        Enter your information to log into your account
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4">                        
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Email</Label>
                             <Input
                                 name="email"
                                 value={input.email}
                                 onChange={changeFormHandler}
                                 type="email"
                                 placeholder="Enter email"
-                                className="mt-1 mb-3 font-semibold"
                                 required
                             />
-                        </Label>
-                        <Label className="text-l ml-1 font-bold">
-                            Password
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="password">Password</Label>
                             <Input
                                 name="password"
                                 value={input.password}
                                 onChange={changeFormHandler}
                                 type="password"
                                 placeholder="Enter password"
-                                className="mt-1 mb-6 font-semibold"
                                 required
                             />
-                        </Label>
-                        <div className="flex justify-between mb-2">
-                            <div className="flex justify-start items-center gap-5">
-                                <div className="flex space-x-2">
-                                    <Label className="flex gap-2 font-bold cursor-pointer">
-                                        <Input
-                                            type="radio"
-                                            name="role"
-                                            value="Job Seeker"
-                                            checked={input.role === "Job Seeker"}
-                                            onChange={changeFormHandler}
-                                            className="h-4 w-4 accent-black  cursor-pointer font-semibold"
-                                            required
-
-                                        />
-                                        Job Seeker
-                                    </Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Label className="flex gap-2 font-bold cursor-pointer">
-                                        <Input
-                                            type="radio"
-                                            name="role"
-                                            value="Job Recruiter"
-                                            checked={input.role === "Job Recruiter"}
-                                            onChange={changeFormHandler}
-                                            className="h-4 w-4 accent-black cursor-pointer font-semibold"
-                                        />
-                                        Job Recruiter
-                                    </Label>
-                                </div>
+                        </div>                                                
+                        <div className="flex justify-start items-center gap-5">
+                            <div className="flex space-x-2">
+                                <Label className="flex gap-2  cursor-pointer">
+                                    <Input
+                                        type="radio"
+                                        name="role"
+                                        value="Job Seeker"
+                                        checked={input.role === "Job Seeker"}
+                                        onChange={changeFormHandler}
+                                        className="h-4 w-4 accent-black  cursor-pointer "
+                                    />
+                                    Job Seeker
+                                </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <Label className="flex gap-2 cursor-pointer">
+                                    <Input
+                                        type="radio"
+                                        name="role"
+                                        value="Job Recruiter"
+                                        checked={input.role === "Job Recruiter"}
+                                        onChange={changeFormHandler}
+                                        className="h-4 w-4 accent-black cursor-pointer "
+                                    />
+                                    Job Recruiter
+                                </Label>
                             </div>
                         </div>
+                        {
+                            loading ?
+                                <Button className="bg-[#f8b400] hover:bg-[#d8a005] w-full cursor-default"> <Loader2 className="animate-spin mr-4" /> Please wait </Button> :
+                                <Button type="submit" onClick={submitHandler} className="hover:bg-[#d8a005] bg-[#f8b400] w-full">
+                                    Log in
+                                </Button>
+                        }
+
+                        <Button  variant="outline" className="w-full">
+                            Log in with Google
+                        </Button>
                     </div>
-                    {
-                        loading ? 
-                        <Button className="bg-[#d8a005] w-full my-4 hover:bg-[#d8a005] cursor-default"> <Loader2 className="animate-spin mr-4"/> Please wait </Button> :
-                        <Button type="submit" className="bg-[#f8b400] w-full my-4 hover:bg-[#d8a005]">LOG IN</Button>
-                    }
-                    <div className="flex justify-end">
-                        <span className="text-sm mr-2">Don't have an account?</span>
-                        <Link className="text-sm font-bold text-[#2c786c]" to={"/signup"}>
+                    <div className="mt-4 text-center text-sm">
+                        Don't have an account?{" "}
+                        <Link to="/signup" className="underline">
                             Sign up
                         </Link>
                     </div>
-                </form>
-            </div>
-        </>
+                </CardContent>
+            </Card>
+        </div>
     );
 };
